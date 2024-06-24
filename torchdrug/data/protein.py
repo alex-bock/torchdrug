@@ -183,6 +183,8 @@ class Protein(Molecule):
         """
         protein = Molecule.from_molecule(mol, atom_feature=atom_feature, bond_feature=bond_feature,
                                          mol_feature=mol_feature, with_hydrogen=False, kekulize=kekulize)
+        if len(protein.edge_list) == 0:
+            return None
         residue_feature = cls._standarize_option(residue_feature)
 
         if kekulize:
@@ -481,7 +483,9 @@ class Protein(Molecule):
         edge_weight = torch.cat(edge_weight)
         data_dict = {k: torch.cat(v) for k, v in data_dict.items()}
 
-        return cls.packed_type(edge_list, edge_weight=edge_weight, num_relation=graphs[0].num_relation,
+        num_relation = max([x.num_relation for x in graphs])
+
+        return cls.packed_type(edge_list, edge_weight=edge_weight, num_relation=num_relation,
                                num_nodes=num_nodes, num_edges=num_edges, num_residues=num_residues, view=view,
                                meta_dict=meta_dict, **data_dict)
 
