@@ -53,7 +53,7 @@ class Molecule(Graph):
                  mol_feature=None, formal_charge=None, explicit_hs=None, chiral_tag=None, radical_electrons=None,
                  atom_map=None, bond_stereo=None, stereo_atoms=None, node_position=None, **kwargs):
         if "num_relation" not in kwargs:
-            kwargs["num_relation"] = len(self.bond2id)
+            kwargs["num_relation"] = edge_list[:, 2].max().item() + 1
         super(Molecule, self).__init__(edge_list=edge_list, **kwargs)
         atom_type, bond_type = self._standarize_atom_bond(atom_type, bond_type)
 
@@ -930,8 +930,8 @@ class PackedMolecule(PackedGraph, Molecule):
                 if h < t:
                     if bond_stereo[j]:
                         bond = mol.GetBondWithIdx(k)
-                        # These do not necessarily need to be the highest 'ranking' atoms like CIP stereo requires. 
-                        # They can be any arbitrary atoms neighboring the begin and end atoms of this bond respectively. 
+                        # These do not necessarily need to be the highest 'ranking' atoms like CIP stereo requires.
+                        # They can be any arbitrary atoms neighboring the begin and end atoms of this bond respectively.
                         # STEREOCIS or STEREOTRANS is then set relative to only these atoms.
                         bond.SetStereoAtoms(*stereo_atoms[j])
                     k += 1
