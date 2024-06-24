@@ -28,7 +28,6 @@ class EnzymeCommission(data.ProteinDataset):
         **kwargs
     """
 
-    url = "https://zenodo.org/record/6622158/files/EnzymeCommission.zip"
     md5 = "33f799065f8ad75f87b709a87293bc65"
     processed_file = "enzyme_commission.pkl.gz"
     test_cutoffs = [0.3, 0.4, 0.5, 0.7, 0.95]
@@ -42,8 +41,7 @@ class EnzymeCommission(data.ProteinDataset):
             raise ValueError("Unknown test cutoff `%.2f` for EnzymeCommission dataset" % test_cutoff)
         self.test_cutoff = test_cutoff
 
-        zip_file = utils.download(self.url, path, md5=self.md5)
-        path = os.path.join(utils.extract(zip_file), "EnzymeCommission")
+        path = os.path.join(path, "EnzymeCommission")
         pkl_file = os.path.join(path, self.processed_file)
 
         csv_file = os.path.join(path, "nrPDB-EC_test.csv")
@@ -61,7 +59,7 @@ class EnzymeCommission(data.ProteinDataset):
         else:
             pdb_files = []
             for split in ["train", "valid", "test"]:
-                split_path = utils.extract(os.path.join(path, "%s.zip" % split))
+                split_path = path
                 pdb_files += sorted(glob.glob(os.path.join(split_path, split, "*.pdb")))
             self.load_pdbs(pdb_files, verbose=verbose, **kwargs)
             self.save_pickle(pkl_file, verbose=verbose)
