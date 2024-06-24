@@ -29,8 +29,6 @@ def load_contacts(protein: Protein, contacts_fp: str):
         skiprows=[0, 1], usecols=[0, 1, 2, 3]
     )
 
-    edge_list = protein.edge_list
-
     contacts_df.type = contacts_df.type.apply(edit_contact_type)
 
     contacts_df[["chain_u", "res_type_u", "chain_u_i", "atom_name_u"]] = contacts_df.u.str.split(":", expand=True)
@@ -54,8 +52,8 @@ def load_contacts(protein: Protein, contacts_fp: str):
     contacts_df["res_v_atom_names"] = contacts_df.res_v_atom_is.apply(lambda x: protein.atom_name[x])
     # import pdb; pdb.set_trace()
 
-    contacts_df["atom_u_i"] = contacts_df.apply(lambda row: row.res_u_atom_is[row.res_u_atom_names == protein.atom_name2id[row.atom_name_u]][0], axis=1)
-    contacts_df["atom_v_i"] = contacts_df.apply(lambda row: row.res_v_atom_is[row.res_v_atom_names == protein.atom_name2id[row.atom_name_v]][0], axis=1)
+    contacts_df["atom_u_i"] = contacts_df.apply(lambda row: row.res_u_atom_is[row.res_u_atom_names == protein.atom_name2id.get(row.atom_name_u, protein.atom_name2id["UNK"])][0], axis=1)
+    contacts_df["atom_v_i"] = contacts_df.apply(lambda row: row.res_v_atom_is[row.res_v_atom_names == protein.atom_name2id.get(row.atom_name_v, protein.atom_name2id["UNK"])][0], axis=1)
 
     # import pdb; pdb.set_trace()
 
@@ -64,7 +62,7 @@ def load_contacts(protein: Protein, contacts_fp: str):
 
     edge_list = torch.cat(
         [
-            edge_list,
+            protein.edge_list,
             torch.stack(
                 [
                     Tensor(contacts_df.atom_u_i.values.astype(int)),
@@ -84,9 +82,7 @@ def load_contacts(protein: Protein, contacts_fp: str):
             is_hetero_atom=protein.is_hetero_atom, occupancy=protein.occupancy,
             b_factor=protein.b_factor, residue_number=protein.residue_number,
             insertion_code=protein.insertion_code, chain_id=protein.chain_id,
-            num_relation=edge_list[:, 2].max() + 1,
             node_position=protein.node_position
-
         )
     except ValueError:
         import pdb; pdb.set_trace()
