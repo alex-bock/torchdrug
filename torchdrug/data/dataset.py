@@ -19,6 +19,8 @@ from torch.utils import data as torch_data
 
 from torchdrug import core, data, utils
 
+from .util import load_contacts
+
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +225,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         atom_types = set()
 
         if getattr(self, "lazy", False):
-            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")             
+            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")
             for smiles in self.smiles_list:
                 graph = data.Molecule.from_smiles(smiles, **self.kwargs)
                 atom_types.update(graph.atom_type.tolist())
@@ -239,7 +241,7 @@ class MoleculeDataset(torch_data.Dataset, core.Configurable):
         bond_types = set()
 
         if getattr(self, "lazy", False):
-            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")             
+            warnings.warn("Calling this function for dataset with lazy=True may take a large amount of time.")
             for smiles in self.smiles_list:
                 graph = data.Molecule.from_smiles(smiles, **self.kwargs)
                 bond_types.update(graph.edge_list[:, 2].tolist())
@@ -692,7 +694,7 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         """
         if target_fields is not None:
             target_fields = set(target_fields)
-    
+
         sequences = []
         num_samples = []
         targets = defaultdict(list)
@@ -710,18 +712,19 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                                 value = value.item()
                             targets[field].append(value)
                 num_samples.append(num_sample)
-    
+
         self.load_sequence(sequences, targets, attributes=None, transform=transform,
                            lazy=lazy, verbose=verbose, **kwargs)
         self.num_samples = num_samples
 
     @utils.copy_args(data.Protein.from_molecule)
-    def load_pdbs(self, pdb_files, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_pdbs(self, pdb_files, with_contacts=True, transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from pdb files.
 
         Parameters:
             pdb_files (list of str): pdb file names
+            with_contacts (bool, optional): falalalala
             transform (Callable, optional): protein sequence transformation function
             lazy (bool, optional): if lazy mode is used, the proteins are processed in the dataloader.
                 This may slow down the data loading process, but save a lot of CPU memory and dataset loading time.
@@ -752,6 +755,12 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                 if not protein:
                     logger.debug("Can't construct protein from pdb file `%s`. Ignore this sample." % pdb_file)
                     continue
+                elif with_contacts:
+                    contact_fp = os.path.join(self.path, self.__class__.__name__, "contacts/", os.path.basename(pdb_file))
+                    if not os.path.exists(contact_fp):
+                        logger.debug(f"Can't find contact file for {os.path.basename(pdb_file)}")
+                        continue
+                    protein = load_contacts(protein, contact_fp)
             else:
                 protein = None
             if hasattr(protein, "residue_feature"):
@@ -919,7 +928,7 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
             target_fields = set()
         if not isinstance(sequence_field, Sequence):
             sequence_field = [sequence_field]
-    
+
         sequences = []
         num_samples = []
         targets = defaultdict(list)
@@ -936,10 +945,10 @@ class ProteinPairDataset(ProteinDataset, core.Configurable):
                             value = value.item()
                         targets[field].append(value)
                 num_samples.append(num_sample)
-    
+
         self.load_sequence(sequences, targets, transform=transform, lazy=lazy, verbose=verbose, **kwargs)
         self.num_samples = num_samples
-    
+
     @property
     def node_feature_dim(self):
         """Dimension of node features."""
@@ -1048,7 +1057,7 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
         """
         if target_fields is not None:
             target_fields = set(target_fields)
-    
+
         sequences = []
         smiles = []
         num_samples = []
@@ -1068,11 +1077,11 @@ class ProteinLigandDataset(ProteinDataset, core.Configurable):
                                 value = value.item()
                             targets[field].append(value)
                 num_samples.append(num_sample)
-    
+
         num_samples = self.load_sequence(sequences, smiles, targets, num_samples, transform=transform,
                                          lazy=lazy, verbose=verbose, **kwargs)
         self.num_samples = num_samples
-    
+
     @property
     def ligand_node_feature_dim(self):
         """Dimension of node features for ligands."""
