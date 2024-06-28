@@ -761,6 +761,8 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
                         logger.debug(f"Can't find contact file for {os.path.basename(pdb_file)}")
                         continue
                     protein = load_contacts(protein, contact_fp)
+                    if protein is None:
+                        continue
             else:
                 protein = None
             if hasattr(protein, "residue_feature"):

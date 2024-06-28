@@ -1,4 +1,6 @@
 
+import os
+
 import pandas as pd
 
 import torch
@@ -24,12 +26,19 @@ def edit_contact_type(contact_type: str):
 
 def load_contacts(protein: Protein, contacts_fp: str):
 
+    if not os.path.exists(contacts_fp):
+        return None
+
     contacts_df = pd.read_csv(
         contacts_fp, sep="\t", names=["frame", "type", "u", "v"],
         skiprows=[0, 1], usecols=[0, 1, 2, 3]
     )
 
+    if len(contacts_df) == 0:
+        return None
+
     contacts_df.type = contacts_df.type.apply(edit_contact_type)
+    # import pdb; pdb.set_trace()
 
     contacts_df[["chain_u", "res_type_u", "chain_u_i", "atom_name_u"]] = contacts_df.u.str.split(":", expand=True)
     contacts_df[["chain_v", "res_type_v", "chain_v_i", "atom_name_v"]] = contacts_df.v.str.split(":", expand=True)
