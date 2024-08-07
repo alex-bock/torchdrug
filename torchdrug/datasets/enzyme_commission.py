@@ -42,9 +42,11 @@ class EnzymeCommission(data.ProteinDataset):
             raise ValueError("Unknown test cutoff `%.2f` for EnzymeCommission dataset" % test_cutoff)
         self.test_cutoff = test_cutoff
 
-        if not os.path.exists(path):
+        if not os.path.exists(os.path.join(path, "EnzymeCommission")):
             zip_file = utils.download(self.url, path, md5=self.md5)
             path = os.path.join(utils.extract(zip_file), "EnzymeCommission")
+        else:
+            path = os.path.join(path, "EnzymeCommission")
 
         pkl_file = os.path.join(path, self.processed_file)
 
