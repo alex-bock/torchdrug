@@ -718,7 +718,7 @@ class ProteinDataset(MoleculeDataset, core.Configurable):
         self.num_samples = num_samples
 
     @utils.copy_args(data.Protein.from_molecule)
-    def load_pdbs(self, pdb_files, with_contacts=True, transform=None, lazy=False, verbose=0, **kwargs):
+    def load_pdbs(self, pdb_files, with_contacts=False, transform=None, lazy=False, verbose=0, **kwargs):
         """
         Load the dataset from pdb files.
 
