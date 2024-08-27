@@ -116,9 +116,11 @@ class AttributeMasking(tasks.Task, core.Configurable):
         self.mlp = layers.MLP(model_output_dim, [model_output_dim] * (self.num_mlp_layer - 1) + [num_label])
 
     def predict_and_target(self, batch, all_loss=None, metric=None):
-        graph = batch["graph"]
+        protein = batch["graph"]
         if self.graph_construction_model:
-            graph = self.graph_construction_model.apply_node_layer(graph)
+            graph = self.graph_construction_model.apply_node_layer(protein)
+            if isinstance(graph, tuple):
+                (graph, protein) = graph
 
         num_nodes = graph.num_nodes if self.view in ["atom", "node"] else graph.num_residues
         num_cum_nodes = num_nodes.cumsum(0)
@@ -139,7 +141,10 @@ class AttributeMasking(tasks.Task, core.Configurable):
                 graph.residue_type[node_index] = 0
             # Generate masked edge features. Any better implementation?
             if self.graph_construction_model:
-                graph = self.graph_construction_model.apply_edge_layer(graph)
+                try:
+                    graph = self.graph_construction_model.apply_edge_layer(graph)
+                except TypeError:
+                    graph = self.graph_construction_model.apply_edge_layer(graph, protein)
             input = graph.residue_feature.float()
 
         output = self.model(graph, input, all_loss, metric)
